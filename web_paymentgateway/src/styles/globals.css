@@ -1,0 +1,17 @@
+@import 'tailwindcss';
+
+/* Tailwind v4 sudah auto inject, jadi tidak perlu @tailwind base/components/utilities */
+
+/* Tambahkan global style kamu sendiri */
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, sans-serif;
+  background-color: #f9fafb; /* Tailwind bg-gray-50 */
+  color: #111827; /* Tailwind text-gray-900 */
+}
+
+/* Contoh custom class */
+.btn-primary {
+  @apply bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700;
+}
