@@ -9,57 +9,49 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ✅ Hubungkan ke MongoDB
+    // Hubungkan ke MongoDB
     await dbConnect();
 
     const { email, password } = req.body;
 
-    // 🔍 Validasi input
+    // Validasi
     if (!email || !password) {
       return res.status(400).json({ error: 'Email dan password wajib diisi.' });
     }
 
-    // 🔍 Cek apakah user ada
+    // Cari user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ error: 'User tidak ditemukan.' });
     }
 
-    // ❌ Jika akun belum diverifikasi OTP
-    if (!user.isVerified) {
-      return res.status(403).json({
-        error: 'Akun belum diverifikasi. Silakan verifikasi OTP terlebih dahulu.',
-      });
-    }
-
-    // 🔐 Verifikasi password
+    // Verifikasi password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ error: 'Password salah.' });
     }
 
-    // 🔑 Buat JWT token
+    // Buat token
     const token = jwt.sign(
       {
         userId: user._id,
         email: user.email,
-        role: user.role || 'user', // Default ke 'user' jika role tidak ada
+        role: user.role || 'user',
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    // 🎯 Tentukan redirect berdasarkan role
-    let redirectTo = '/selectitem'; // Default untuk user biasa
-    
+    // Redirect role
+    let redirectTo = '/selectitem';
+
     if (user.role === 'admin') {
       redirectTo = '/admin';
     } else if (user.role === 'merchant') {
       redirectTo = '/merchant/dashboard';
     }
-    // Jika user.role === 'user' atau undefined, tetap ke /selectitem
 
-    // 🚀 Kirim respons sukses
+    // Response sukses
     return res.status(200).json({
       message: 'Login berhasil!',
       token,
@@ -68,7 +60,6 @@ export default async function handler(req, res) {
         name: user.name,
         email: user.email,
         role: user.role || 'user',
-        isVerified: user.isVerified,
       },
       redirectTo,
     });

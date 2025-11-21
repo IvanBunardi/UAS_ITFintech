@@ -1,154 +1,125 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import dbConnect from '../../../lib/mongodb';
-import Checkout from '../../../models/Checkout';
-import Payment from '../../../models/Payment';
-import Order from '../../../models/Order';
+// pages/api/webhook/doku.ts
+import type { NextApiRequest, NextApiResponse } from "next";
+import crypto from "crypto";
+import dbConnect from "../../../lib/mongodb";
+import Checkout from "../../../models/Checkout";
+import Payment from "../../../models/Payment";
+import Order from "../../../models/Order";
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+// Read raw body
+const getRawBody = (req: NextApiRequest): Promise<string> => {
+  return new Promise((resolve) => {
+    let data = "";
+    req.on("data", (chunk) => (data += chunk));
+    req.on("end", () => resolve(data));
+  });
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  console.log('\n========== WEBHOOK HANDLER START ==========');
+  console.log("🔥 DOKU WEBHOOK RECEIVED");
 
-  if (req.method !== 'POST') {
-    console.warn('❌ Method not POST');
-    return res.status(405).end();
+  if (req.method !== "POST")
+    return res.status(405).json({ error: "Method not allowed" });
+
+  const rawBody = await getRawBody(req);
+  console.log("RAW BODY:", rawBody);
+
+  const signatureHeader = req.headers["signature"] as string;
+  const clientId = req.headers["client-id"] as string;
+  const requestId = req.headers["request-id"] as string;
+  const requestTimestamp = req.headers["request-timestamp"] as string;
+  const requestTarget = req.headers["request-target"] as string; // << WAJIB PAKAI INI!
+
+  if (!signatureHeader || !clientId || !requestId || !requestTimestamp) {
+    console.log("❌ Missing signature headers");
+    return res.status(400).json({ error: "Missing signature headers" });
   }
 
-  // Verify webhook token
-  const tokenHeader =
-    req.headers['x-callback-token'] ||
-    req.headers['X-Callback-Token'.toLowerCase()];
+  // === SIGNATURE CHECK ===
+  const digest = crypto
+    .createHash("sha256")
+    .update(rawBody)
+    .digest("base64");
 
-  console.log('Token from header:', tokenHeader);
-  console.log('Token expected:', process.env.XENDIT_WEBHOOK_TOKEN);
+  const signatureString =
+    `Client-Id:${clientId}\n` +
+    `Request-Id:${requestId}\n` +
+    `Request-Timestamp:${requestTimestamp}\n` +
+    `Request-Target:${requestTarget}\n` +
+    `Digest:${digest}`;
 
-  if (!tokenHeader || tokenHeader !== process.env.XENDIT_WEBHOOK_TOKEN) {
-    console.warn('❌ Invalid webhook token');
-    return res.status(403).json({ error: 'Invalid webhook token' });
+  const expectedSignature =
+    "HMACSHA256=" +
+    crypto
+      .createHmac("sha256", process.env.DOKU_SECRET_KEY!) // MUST USE SECRET KEY!
+      .update(signatureString)
+      .digest("base64");
+
+  console.log("Header Sig:", signatureHeader);
+  console.log("Calc Sig  :", expectedSignature);
+
+  if (expectedSignature !== signatureHeader) {
+    console.log("❌ INVALID SIGNATURE");
+    return res.status(403).json({ error: "Invalid signature" });
   }
+
+  console.log("✅ SIGNATURE VALID");
+
+  // === Parse JSON ===
+  const json = JSON.parse(rawBody);
+  console.log("WEBHOOK JSON:", json);
 
   await dbConnect();
-  console.log('✅ Connected to MongoDB');
 
-  const event = req.body;
-  console.log('Event body:', JSON.stringify(event, null, 2));
+  const invoice = json?.order?.invoice_number;
+  const status = json?.transaction?.status;
 
-  const status = event.status || event.data?.status;
-  const externalId =
-    event.external_id || event.data?.external_id || event.data?.externalId;
-  const xenditId = event.id || event.data?.id;
+  // === UPDATE PAYMENT ===
+  if (status === "SUCCESS") {
+    console.log("💰 Payment success for invoice:", invoice);
 
-  console.log('Status:', status);
-  console.log('External ID:', externalId);
-  console.log('Xendit ID:', xenditId);
+    const checkout = await Checkout.findOneAndUpdate(
+      { externalId: invoice },
+      { status: "PAID" }
+    );
 
-  try {
-    // Handle PAID status
-    if (status === 'PAID' || status === 'SETTLED' || event.type === 'invoice.paid') {
-      console.log('\n✅ INVOICE PAID\n');
+    const payment = await Payment.findOneAndUpdate(
+      { checkout: checkout?._id },
+      { status: "PAID" },
+      { upsert: true }
+    );
 
-      // Find and update Checkout
-      const checkout = await Checkout.findOneAndUpdate(
-        { externalId },
-        { status: 'PAID' },
-        { new: true }
-      );
-
-      if (!checkout) {
-        console.warn('⚠️ Checkout not found:', externalId);
-        return res.status(200).json({ received: true });
-      }
-
-      console.log('✅ Checkout updated:', checkout._id);
-
-      // Find and update Payment
-      const payment = await Payment.findOneAndUpdate(
-        { checkout: checkout._id },
-        { status: 'PAID', xenditId },
-        { new: true, upsert: true }
-      );
-
-      console.log('✅ Payment updated:', payment._id);
-
-      // Find and update Order
-      if (payment?.order) {
-        const order = await Order.findByIdAndUpdate(
-          payment.order,
-          { status: 'paid' },
-          { new: true }
-        );
-
-        console.log('✅ Order updated to PAID:', order?._id, order?.orderNumber);
-
-        // Send WhatsApp notification
-        if (order && order.customerPhone) {
-          console.log('\n📱 Sending WhatsApp notification...\n');
-
-          try {
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-            const notificationUrl = `${baseUrl}/api/send-payment-notification`;
-
-            console.log('Calling:', notificationUrl);
-
-            const response = await fetch(notificationUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                orderId: order._id,
-                phone: order.customerPhone,
-                customerName: order.customerName,
-                totalAmount: order.totalAmount,
-                orderNumber: order.orderNumber,
-              }),
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-              console.log('✅✅ WhatsApp sent successfully!');
-              console.log('Message SID:', result.messageSid);
-              console.log('Status:', result.status);
-            } else {
-              console.error('❌ WhatsApp API error:', result.error);
-            }
-          } catch (notificationError) {
-            console.error('❌ Error calling WhatsApp API:');
-            console.error(notificationError);
-          }
-        } else {
-          console.warn('⚠️ No customerPhone found in order');
-        }
-      } else {
-        console.warn('⚠️ Payment has no order reference');
-      }
+    if (payment?.order) {
+      await Order.findByIdAndUpdate(payment.order, { status: "paid" });
     }
-    // Handle EXPIRED status
-    else if (status === 'EXPIRED' || event.type === 'invoice.expired') {
-      console.log('\n⏰ INVOICE EXPIRED\n');
 
-      const checkout = await Checkout.findOneAndUpdate(
-        { externalId },
-        { status: 'EXPIRED' }
-      );
-
-      if (checkout) {
-        const payment = await Payment.findOne({ checkout: checkout._id });
-        if (payment?.order) {
-          await Order.findByIdAndUpdate(payment.order, { status: 'cancelled' });
-          console.log('✅ Order cancelled due to expired invoice');
-        }
-      }
-    } else {
-      console.log('📌 Event not handled:', event.type, 'status:', status);
-    }
-  } catch (error) {
-    console.error('❌ ERROR in webhook:');
-    if (error instanceof Error) {
-      console.error('Message:', error.message);
-      console.error('Stack:', error.stack);
-    } else {
-      console.error('Unknown error:', error);
-    }
+    return res.status(200).json({ received: true });
   }
 
-  console.log('\n========== WEBHOOK HANDLER END ==========\n');
+  if (status === "EXPIRED") {
+    console.log("⌛ Payment expired:", invoice);
+
+    const checkout = await Checkout.findOneAndUpdate(
+      { externalId: invoice },
+      { status: "EXPIRED" }
+    );
+
+    if (checkout) {
+      const payment = await Payment.findOne({ checkout: checkout._id });
+      if (payment?.order) {
+        await Order.findByIdAndUpdate(payment.order, { status: "cancelled" });
+      }
+    }
+
+    return res.status(200).json({ received: true });
+  }
+
+  console.log("⚠ Unhandled status:", status);
   return res.status(200).json({ received: true });
 }
