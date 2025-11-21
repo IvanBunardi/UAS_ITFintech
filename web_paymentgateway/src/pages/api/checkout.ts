@@ -34,12 +34,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const CLIENT_ID = process.env.DOKU_CLIENT_ID!;
     const SECRET_KEY = process.env.DOKU_SECRET_KEY!;
 
-    // === Generate invoice ===
+    // Generate invoice
     const invoice_number = `INV-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
-    // ====================================
-    // 1. SAVE CHECKOUT (FIXED)
-    // ====================================
+    // 1. SAVE CHECKOUT
     const checkout = await Checkout.create({
       externalId: invoice_number,
       items: items.map((i: any) => ({
@@ -54,9 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       customerWhatsapp: customerPhone,
     });
 
-    // ====================================
-    // 2. SAVE ORDER (FIXED)
-    // ====================================
+    // 2. SAVE ORDER
     const order = await Order.create({
       orderNumber: invoice_number,
       customerName,
@@ -75,14 +71,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })),
     });
 
-    // ====================================
-    // 3. DOKU BODY
-    // ====================================
+    // 3. PREPARE DOKU BODY WITH CORRECT CALLBACK/RETURN URL
+    // IMPORTANT: Add invoice_number as query param
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    const successUrl = `${baseUrl}/success?invoice_number=${invoice_number}`;
+
     const body = {
       order: {
         amount: Math.round(totalPrice),
         invoice_number,
-        callback_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhook`,
+        callback_url: successUrl,  // ← URL with invoice_number
+        return_url: successUrl,     // ← URL with invoice_number
       },
       payment: {
         payment_due_date: 60, // minutes
@@ -94,9 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     };
 
-    // ====================================
-    // 4. SIGNATURE (WORKING)
-    // ====================================
+    // 4. GENERATE SIGNATURE
     const requestId = crypto.randomUUID();
     const requestTs = new Date().toISOString();
 
@@ -128,9 +125,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log("=== DOKU REQUEST BODY ===");
     console.log(JSON.stringify(body, null, 2));
 
-    // ====================================
-    // 5. REQUEST KE DOKU
-    // ====================================
+    // 5. REQUEST TO DOKU
     const resp = await fetch(`${DOKU_BASE}${DOKU_PATH}`, {
       method: "POST",
       headers,
@@ -160,9 +155,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // ====================================
     // 6. SAVE PAYMENT LOG
-    // ====================================
     await Payment.create({
       checkout: checkout._id,
       order: order._id,

@@ -1,4 +1,3 @@
-// pages/api/webhook/doku.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import crypto from "crypto";
 import dbConnect from "../../../lib/mongodb";
@@ -24,28 +23,29 @@ const getRawBody = (req: NextApiRequest): Promise<string> => {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log("🔥 DOKU WEBHOOK RECEIVED");
 
-  if (req.method !== "POST")
+  if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
 
   const rawBody = await getRawBody(req);
   console.log("RAW BODY:", rawBody);
 
+  // Headers
   const signatureHeader = req.headers["signature"] as string;
   const clientId = req.headers["client-id"] as string;
   const requestId = req.headers["request-id"] as string;
   const requestTimestamp = req.headers["request-timestamp"] as string;
-  const requestTarget = req.headers["request-target"] as string; // << WAJIB PAKAI INI!
+  const requestTarget = req.headers["request-target"] as string;
 
-  if (!signatureHeader || !clientId || !requestId || !requestTimestamp) {
+  console.log("request-target from DOKU:", requestTarget);
+
+  if (!signatureHeader || !clientId || !requestId || !requestTimestamp || !requestTarget) {
     console.log("❌ Missing signature headers");
     return res.status(400).json({ error: "Missing signature headers" });
   }
 
-  // === SIGNATURE CHECK ===
-  const digest = crypto
-    .createHash("sha256")
-    .update(rawBody)
-    .digest("base64");
+  // === SIGNATURE VALIDATION ===
+  const digest = crypto.createHash("sha256").update(rawBody).digest("base64");
 
   const signatureString =
     `Client-Id:${clientId}\n` +
@@ -57,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const expectedSignature =
     "HMACSHA256=" +
     crypto
-      .createHmac("sha256", process.env.DOKU_SECRET_KEY!) // MUST USE SECRET KEY!
+      .createHmac("sha256", process.env.DOKU_SECRET_KEY!)
       .update(signatureString)
       .digest("base64");
 
@@ -71,7 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   console.log("✅ SIGNATURE VALID");
 
-  // === Parse JSON ===
+  // === PARSE JSON ===
   const json = JSON.parse(rawBody);
   console.log("WEBHOOK JSON:", json);
 
@@ -80,38 +80,72 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const invoice = json?.order?.invoice_number;
   const status = json?.transaction?.status;
 
-  // === UPDATE PAYMENT ===
-  if (status === "SUCCESS") {
-    console.log("💰 Payment success for invoice:", invoice);
+  console.log("Invoice:", invoice);
+  console.log("Payment Status:", status);
 
-    const checkout = await Checkout.findOneAndUpdate(
+  if (!invoice) {
+    console.log("❌ Invoice missing");
+    return res.status(400).json({ error: "Missing invoice number" });
+  }
+
+  const checkout = await Checkout.findOne({ externalId: invoice });
+
+  if (!checkout) {
+    console.log("❌ Checkout not found for invoice:", invoice);
+  }
+
+  // ==============================================
+  // SUCCESS, COMPLETED, PAID
+  // ==============================================
+  if (["SUCCESS", "COMPLETED", "PAID"].includes(status)) {
+    console.log("💰 PAYMENT SUCCESS / COMPLETED / PAID");
+
+    // update checkout
+    const updatedCheckout = await Checkout.findOneAndUpdate(
       { externalId: invoice },
-      { status: "PAID" }
-    );
-
-    const payment = await Payment.findOneAndUpdate(
-      { checkout: checkout?._id },
       { status: "PAID" },
-      { upsert: true }
+      { new: true }
     );
 
-    if (payment?.order) {
-      await Order.findByIdAndUpdate(payment.order, { status: "paid" });
+    // update payment record
+    const updatedPayment = await Payment.findOneAndUpdate(
+      { checkout: updatedCheckout?._id },
+      { status: "PAID", rawWebhook: json },
+      { upsert: true, new: true }
+    );
+
+    console.log("Updated Payment:", updatedPayment);
+
+    // fallback kalau payment.order kosong
+    const orderId =
+      updatedPayment?.order ||
+      updatedCheckout?.order ||
+      updatedPayment?.dokuPayload?.order?._id;
+
+    if (orderId) {
+      await Order.findByIdAndUpdate(orderId, { status: "paid" });
+      console.log("🎉 ORDER MARKED AS PAID:", orderId);
+    } else {
+      console.log("⚠ No order found for payment");
     }
 
     return res.status(200).json({ received: true });
   }
 
+  // ==============================================
+  // EXPIRED
+  // ==============================================
   if (status === "EXPIRED") {
-    console.log("⌛ Payment expired:", invoice);
+    console.log("⌛ PAYMENT EXPIRED");
 
-    const checkout = await Checkout.findOneAndUpdate(
+    const updatedCheckout = await Checkout.findOneAndUpdate(
       { externalId: invoice },
-      { status: "EXPIRED" }
+      { status: "EXPIRED" },
+      { new: true }
     );
 
-    if (checkout) {
-      const payment = await Payment.findOne({ checkout: checkout._id });
+    if (updatedCheckout) {
+      const payment = await Payment.findOne({ checkout: updatedCheckout._id });
       if (payment?.order) {
         await Order.findByIdAndUpdate(payment.order, { status: "cancelled" });
       }

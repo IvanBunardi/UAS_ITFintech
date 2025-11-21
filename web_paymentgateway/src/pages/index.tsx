@@ -47,7 +47,7 @@ export default function LandingPage() {
 
       {/* Navbar */}
       <header className="flex justify-between items-center py-4 px-8 bg-white/20 backdrop-blur-md shadow-md z-10">
-        <h1 className="text-2xl font-bold text-white drop-shadow-md">XenditPay</h1>
+        <h1 className="text-2xl font-bold text-white drop-shadow-md">Pia Popo</h1>
 
         <nav className="flex items-center space-x-6">
           <button
@@ -68,13 +68,12 @@ export default function LandingPage() {
       {/* Hero Section */}
       <main className="flex flex-col items-center text-center px-6 md:px-16 py-16 z-10">
         <h2 className="text-5xl font-extrabold text-white mb-4 leading-tight drop-shadow-md">
-          Belanja Mudah & Aman <br /> dengan{' '}
-          <span className="text-yellow-300">XenditPay</span>
+          Camilan Lezat? <br /> Hanya{' '}
+          <span className="text-yellow-300">Pia Popo</span>
         </h2>
 
         <p className="text-white/90 text-lg max-w-md mb-8">
-          Platform e-commerce modern dengan sistem pembayaran terintegrasi.
-          Nikmati kemudahan checkout menggunakan Payment Gateway Xendit.
+          Ada banyak pilihan rasa yang siap memanjakan lidahmu. Order sekarang!
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -99,7 +98,7 @@ export default function LandingPage() {
           </h3>
 
           {/* Filter dan Search */}
-          <div className="flex flex-wrap gap-3 justify-center mb-6">
+         {/*  <div className="flex flex-wrap gap-3 justify-center mb-6">
             {categories.map((c) => (
               <button
                 key={c}
@@ -123,7 +122,7 @@ export default function LandingPage() {
               onChange={(e) => setSearch(e.target.value)}
               className="border rounded-lg px-3 py-2 w-full max-w-md"
             />
-          </div>
+          </div> */}
 
           {/* Daftar Produk */}
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -167,7 +166,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="text-center bg-black py-4 text-white/80 text-sm z-10">
-        © {new Date().getFullYear()} IT IN FINTECH Payment Gateway. All rights reserved.
+        © {new Date().getFullYear()} Pia Popo. All rights reserved.
       </footer>
     </div>
   )
