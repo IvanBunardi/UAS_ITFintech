@@ -119,7 +119,10 @@ export default function AdminPage() {
     setCategory(product.category)
     setPrice(product.price.toString())
     setDescription(product.description)
-    setImageUrl(product.imageUrl)
+    
+    // SUDAH DIPERBAIKI (sebelumnya setImageUrl)
+    setCurrentImageUrl(product.imageUrl)
+    
     setImageFile(null)
     setMessage('')
     setMessageType('')
@@ -157,7 +160,9 @@ export default function AdminPage() {
     setDescription('')
     setImageFile(null)
     setEditingId(null)
-    setImageUrl('')
+    
+    // SUDAH DIPERBAIKI (sebelumnya setImageUrl)
+    setCurrentImageUrl('')
 
     if (typeof document !== 'undefined') {
       const fileInput = document.getElementById('imageFileInput') as HTMLInputElement | null
@@ -182,7 +187,7 @@ export default function AdminPage() {
   const formatRupiah = (value: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value)
 
-  // Get message styling (Updated Colors)
+  // Get message styling
   const getMessageStyle = () => {
     switch (messageType) {
       case 'success':
@@ -222,7 +227,6 @@ export default function AdminPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Active button style */}
           <button
             onClick={() => router.push('/admin')}
             className={`px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
