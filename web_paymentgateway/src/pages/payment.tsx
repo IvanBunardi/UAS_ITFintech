@@ -34,7 +34,7 @@ export default function PaymentPage() {
     customerName: '',
     customerPhone: '',
     customerEmail: '',
-    notes: '',
+    notes: '', // Field ini sekarang berfungsi ganda: Alamat & Catatan
   });
 
   const SHIPPING_COST = 0;
@@ -64,6 +64,7 @@ export default function PaymentPage() {
     setError('');
     setLoading(true);
 
+    // --- VALIDASI ---
     if (!formData.customerName.trim()) {
       setError('Nama harus diisi');
       setLoading(false);
@@ -74,6 +75,14 @@ export default function PaymentPage() {
       setLoading(false);
       return;
     }
+    
+    // Validasi Alamat/Catatan (Wajib diisi karena butuh alamat)
+    if (!formData.notes.trim()) {
+      setError('Mohon isi Alamat Pengiriman agar paket dapat dikirim');
+      setLoading(false);
+      return;
+    }
+
     if (cart.length === 0) {
       setError('Keranjang kosong');
       setLoading(false);
@@ -88,7 +97,7 @@ export default function PaymentPage() {
         customerName: formData.customerName.trim(),
         customerPhone: formData.customerPhone.trim(),
         customerEmail: formData.customerEmail.trim(),
-        notes: formData.notes.trim(),
+        notes: formData.notes.trim(), // Mengirim alamat/catatan ke backend
       };
 
       const res = await fetch('/api/checkout', {
@@ -133,7 +142,7 @@ export default function PaymentPage() {
     }
   };
 
-  // UI untuk Virtual Account
+  // UI Halaman Sukses (Virtual Account)
   if (paymentInfo && paymentInfo.virtualAccount) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-amber-50 relative overflow-x-hidden flex items-center justify-center p-4">
@@ -204,7 +213,7 @@ export default function PaymentPage() {
               Lihat Detail Pesanan
             </button>
             <button
-              onClick={() => router.push('/user')}
+              onClick={() => router.push('/')}
               className="w-full bg-white border-2 border-pink-300 text-gray-700 py-4 rounded-2xl font-bold hover:bg-pink-50 hover:border-pink-400 transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
             >
               Kembali ke Toko
@@ -232,6 +241,7 @@ export default function PaymentPage() {
     );
   }
 
+  // UI Halaman Form
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-amber-50 relative overflow-x-hidden">
       {/* Decorative circles */}
@@ -328,19 +338,21 @@ export default function PaymentPage() {
                 />
               </div>
 
+              {/* === PERUBAHAN DI SINI === */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Catatan Pesanan (Opsional)
+                  Alamat Pengiriman & Pesan Tambahan <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   name="notes"
                   value={formData.notes}
                   onChange={handleChange}
-                  placeholder="Contoh: Tolong kirim pagi hari, dll."
+                  placeholder="Mohon tuliskan alamat lengkap untuk pengiriman paket (Jalan, No, Kel/Kec, Kota, Kode Pos). Anda juga bisa menambahkan catatan khusus lainnya."
                   rows={4}
                   className="w-full border-2 border-pink-200 rounded-xl px-5 py-4 focus:outline-none focus:border-pink-500 transition-all duration-300 resize-none font-medium shadow-sm focus:shadow-md"
                 />
               </div>
+              {/* ========================= */}
 
               <button
                 onClick={handleSubmit}
