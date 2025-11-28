@@ -144,24 +144,6 @@ export default function LoginPage() {
               </button>
 
               <div className="space-y-3 pt-2">
-                <p className="text-center text-sm text-gray-600">
-                  Lupa password?{' '}
-                  <span
-                    onClick={() => router.push('/forgot-password')}
-                    className="text-pink-600 font-bold hover:text-pink-700 cursor-pointer hover:underline transition-colors"
-                  >
-                    Reset di sini
-                  </span>
-                </p>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t-2 border-pink-200"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white/80 text-gray-500 font-semibold">atau</span>
-                  </div>
-                </div>
 
                 <p className="text-center text-sm text-gray-600">
                   Belum punya akun?{' '}
