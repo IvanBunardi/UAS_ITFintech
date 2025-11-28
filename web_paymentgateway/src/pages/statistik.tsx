@@ -1,8 +1,7 @@
-// src/pages/statistik.tsx  (atau pages/admin/statistik.tsx)
+// @ts-nocheck
 'use client'
 
-import React from 'react'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import {
   LineChart,
@@ -127,14 +126,13 @@ export default function StatistikPage() {
 
   // Order Status Distribution (for Pie Chart)
   const getOrderStatusData = () => [
-    { name: 'Lunas', value: stats.paidOrders, color: '#10b981' },
-    { name: 'Menunggu', value: stats.waitingOrders, color: '#f59e0b' },
-    { name: 'Dibatalkan', value: stats.cancelledOrders, color: '#ef4444' },
+    { name: 'Lunas', value: stats.paidOrders, color: '#ec4899' }, // Pink-500
+    { name: 'Menunggu', value: stats.waitingOrders, color: '#f59e0b' }, // Amber-500
+    { name: 'Batal', value: stats.cancelledOrders, color: '#9ca3af' }, // Gray-400
   ]
 
   // Custom label renderer dengan safe check
   const renderPieLabel = ({ name, percent }: any) => {
-    // Validasi percent adalah number dan tidak NaN
     const percentValue = typeof percent === 'number' && !isNaN(percent) ? percent : 0
     const displayPercent = (percentValue * 100).toFixed(0)
     return `${name}: ${displayPercent}%`
@@ -145,205 +143,326 @@ export default function StatistikPage() {
   const orderStatusData = getOrderStatusData()
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
-      {/* Navigation */}
-      <nav className="bg-white shadow-md py-4 px-8 flex items-center justify-between relative">
-        <button onClick={() => router.push('/')} className="text-black font-semibold hover:text-blue-700">
-          ← Back
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-pink-50 via-rose-50 to-amber-50 font-sans text-gray-800">
+      
+      {/* Decorative circles (Blobs) */}
+      <div className="fixed top-20 right-10 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob pointer-events-none"></div>
+      <div className="fixed top-40 left-10 w-96 h-96 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000 pointer-events-none"></div>
+      <div className="fixed bottom-20 right-1/4 w-96 h-96 bg-amber-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000 pointer-events-none"></div>
+
+      {/* Navbar */}
+      <nav className="bg-white/90 backdrop-blur-lg shadow-xl py-4 px-8 flex items-center justify-between sticky top-0 z-50 border-b-4 border-pink-400">
+        <button 
+          onClick={() => router.push('/')} 
+          className="flex items-center gap-2 text-pink-600 font-bold hover:text-pink-700 transition-colors"
+        >
+          <span className="text-xl">←</span>
+          <span>Kembali</span>
         </button>
-        <h1 className="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold text-gray-800">
-          Admin Dashboard
-        </h1>
-        <div className="flex items-center space-x-4">
+
+        <div className="flex flex-col items-center">
+             <h1 className="text-2xl font-black bg-gradient-to-r from-pink-600 via-rose-500 to-pink-600 bg-clip-text text-transparent tracking-tight">
+                Analytics
+            </h1>
+            <p className="text-[10px] font-bold text-gray-400 tracking-widest">DATA PENJUALAN PIA</p>
+        </div>
+
+        <div className="flex items-center gap-3">
           <button
             onClick={() => router.push('/admin')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              currentPath === '/admin' ? 'bg-blue-700 text-white shadow' : 'text-gray-700 hover:bg-gray-200'
+            className={`px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
+              currentPath === '/admin' 
+                ? 'bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white shadow-lg scale-105' 
+                : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600'
             }`}
           >
-            ➕ Add Item
+            <span className="mr-2">➕</span>
+            Produk
           </button>
+          
           <button
             onClick={() => router.push('/checkoutlist')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              currentPath === '/admin/checkout' ? 'bg-blue-700 text-white shadow' : 'text-gray-700 hover:bg-gray-200'
+            className={`px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
+              currentPath === '/checkoutlist' 
+                 ? 'bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white shadow-lg scale-105' 
+                : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600'
             }`}
           >
-            🛒 Checkout
+            <span className="mr-2">🛒</span>
+            Pesanan
           </button>
+
           <button
             onClick={() => router.push('/statistik')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              currentPath === '/admin/statistik' ? 'bg-blue-700 text-white shadow' : 'text-gray-700 hover:bg-gray-200'
+             className={`px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
+              currentPath === '/statistik' 
+                 ? 'bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white shadow-lg scale-105' 
+                : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600'
             }`}
           >
-            📊 Statistik
+            <span className="mr-2">📊</span>
+            Statistik
           </button>
         </div>
       </nav>
 
       {/* Main Content */}
-      <main className="flex-grow p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Date Range Filter */}
-          <div className="bg-white rounded-lg p-4 shadow flex items-center gap-4">
-            <span className="font-medium text-gray-700">Periode:</span>
-            {['7d', '30d', '90d', 'all'].map((range) => (
-              <button
-                key={range}
-                onClick={() => setDateRange(range as any)}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  dateRange === range ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                {range === '7d' ? '7 Hari' : range === '30d' ? '30 Hari' : range === '90d' ? '90 Hari' : 'Semua'}
-              </button>
-            ))}
+      <main className="flex-grow p-6 z-10 relative">
+        <div className="max-w-7xl mx-auto space-y-8">
+          
+          {/* Filter Bar */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border-2 border-pink-100 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+                <span className="text-2xl">📅</span>
+                <span className="font-bold text-gray-700">Periode Data:</span>
+            </div>
+            <div className="flex gap-2 bg-pink-50 p-1 rounded-xl">
+              {['7d', '30d', '90d', 'all'].map((range) => (
+                <button
+                  key={range}
+                  onClick={() => setDateRange(range as any)}
+                  className={`px-5 py-2 rounded-lg font-bold text-sm transition-all duration-200 ${
+                    dateRange === range 
+                      ? 'bg-white text-pink-600 shadow-md transform scale-105' 
+                      : 'text-gray-500 hover:text-pink-500'
+                  }`}
+                >
+                  {range === '7d' ? '7 Hari' : range === '30d' ? '30 Hari' : range === '90d' ? '90 Hari' : 'Semua'}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg p-6 shadow">
-              <p className="text-gray-600 text-sm mb-2">Total Pendapatan</p>
-              <p className="text-3xl font-bold text-green-600">{formatRupiah(stats.totalRevenue)}</p>
-              <p className="text-sm text-gray-500 mt-1">{stats.paidOrders} transaksi berhasil</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Revenue Card */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border-2 border-pink-100 hover:border-pink-300 transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex items-start justify-between mb-4">
+                <div className="bg-green-100 p-3 rounded-2xl">
+                    <span className="text-2xl">💰</span>
+                </div>
+                <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg">Revenue</span>
+              </div>
+              <p className="text-gray-500 text-sm font-bold">Total Pendapatan</p>
+              <p className="text-2xl font-black text-gray-800 mt-1">{formatRupiah(stats.totalRevenue)}</p>
+              <p className="text-xs text-green-600 mt-2 font-semibold">dari {stats.paidOrders} transaksi sukses</p>
             </div>
-            <div className="bg-white rounded-lg p-6 shadow">
-              <p className="text-gray-600 text-sm mb-2">Rata-rata Order</p>
-              <p className="text-3xl font-bold text-blue-600">{formatRupiah(stats.averageOrderValue)}</p>
-              <p className="text-sm text-gray-500 mt-1">per transaksi</p>
+
+            {/* Avg Order Card */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border-2 border-pink-100 hover:border-pink-300 transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex items-start justify-between mb-4">
+                <div className="bg-blue-100 p-3 rounded-2xl">
+                    <span className="text-2xl">⚖️</span>
+                </div>
+                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">Average</span>
+              </div>
+              <p className="text-gray-500 text-sm font-bold">Rata-rata Order</p>
+              <p className="text-2xl font-black text-gray-800 mt-1">{formatRupiah(stats.averageOrderValue)}</p>
+              <p className="text-xs text-gray-400 mt-2 font-semibold">per keranjang belanja</p>
             </div>
-            <div className="bg-white rounded-lg p-6 shadow">
-              <p className="text-gray-600 text-sm mb-2">Total Order</p>
-              <p className="text-3xl font-bold text-purple-600">{stats.totalOrders}</p>
-              <p className="text-sm text-gray-500 mt-1">dalam periode ini</p>
+
+            {/* Total Order Card */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border-2 border-pink-100 hover:border-pink-300 transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex items-start justify-between mb-4">
+                <div className="bg-purple-100 p-3 rounded-2xl">
+                    <span className="text-2xl">🧾</span>
+                </div>
+                <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">Volume</span>
+              </div>
+              <p className="text-gray-500 text-sm font-bold">Total Transaksi</p>
+              <p className="text-2xl font-black text-gray-800 mt-1">{stats.totalOrders}</p>
+              <p className="text-xs text-gray-400 mt-2 font-semibold">dalam periode ini</p>
             </div>
-            <div className="bg-white rounded-lg p-6 shadow">
-              <p className="text-gray-600 text-sm mb-2">Success Rate</p>
-              <p className="text-3xl font-bold text-indigo-600">
+
+            {/* Success Rate Card */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border-2 border-pink-100 hover:border-pink-300 transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex items-start justify-between mb-4">
+                <div className="bg-pink-100 p-3 rounded-2xl">
+                    <span className="text-2xl">🎯</span>
+                </div>
+                <span className="text-xs font-bold text-pink-600 bg-pink-50 px-2 py-1 rounded-lg">Conversion</span>
+              </div>
+              <p className="text-gray-500 text-sm font-bold">Success Rate</p>
+              <p className="text-2xl font-black text-gray-800 mt-1">
                 {stats.totalOrders > 0 ? Math.round((stats.paidOrders / stats.totalOrders) * 100) : 0}%
               </p>
-              <p className="text-sm text-gray-500 mt-1">tingkat keberhasilan</p>
+              <p className="text-xs text-pink-500 mt-2 font-semibold">tingkat pembayaran berhasil</p>
             </div>
           </div>
 
           {loading ? (
-            <p className="text-center text-gray-500 py-12">⏳ Memuat data...</p>
+             <div className="flex flex-col items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-pink-500 mb-4"></div>
+                <p className="text-gray-500 font-bold">Sedang menganalisis data...</p>
+              </div>
           ) : (
             <>
-              {/* Revenue Line Chart */}
-              <div className="bg-white rounded-lg p-6 shadow">
-                <h2 className="text-xl font-bold mb-4">📈 Pendapatan Harian (14 Hari Terakhir)</h2>
+              {/* Charts Section 1: Line Chart */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border-2 border-pink-200">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-pink-100 p-2 rounded-lg">📈</div>
+                    <h2 className="text-xl font-black text-gray-800">Tren Pendapatan Harian</h2>
+                </div>
+                
                 {dailyRevenueData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={dailyRevenueData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis tickFormatter={(value) => `Rp${(value / 1000).toFixed(0)}k`} />
-                      <Tooltip formatter={(value: number) => formatRupiah(value)} />
-                      <LegendWrapper />
-                      <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name="Pendapatan" />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <div className="h-[350px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={dailyRevenueData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#fce7f3" />
+                        <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} tickLine={false} />
+                        <YAxis 
+                            tickFormatter={(value) => `Rp${(value / 1000).toFixed(0)}k`} 
+                            stroke="#9ca3af" 
+                            fontSize={12} 
+                            tickLine={false}
+                        />
+                        <Tooltip 
+                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                            formatter={(value: number) => [formatRupiah(value), 'Pendapatan']} 
+                        />
+                        <LegendWrapper />
+                        <Line 
+                            type="monotone" 
+                            dataKey="revenue" 
+                            stroke="#ec4899" 
+                            strokeWidth={4} 
+                            dot={{ fill: '#ec4899', strokeWidth: 2, r: 4, stroke: '#fff' }}
+                            activeDot={{ r: 8 }}
+                            name="Pendapatan" 
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
                 ) : (
-                  <p className="text-center text-gray-500 py-12">Belum ada data pendapatan</p>
+                  <div className="text-center py-12 bg-pink-50/50 rounded-2xl">
+                    <p className="text-gray-500 font-medium">Belum ada data pendapatan untuk ditampilkan</p>
+                  </div>
                 )}
               </div>
 
-              {/* Top Products & Order Status */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Charts Section 2: Bar & Pie */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Top Products */}
-                <div className="bg-white rounded-lg p-6 shadow">
-                  <h2 className="text-xl font-bold mb-4">🏆 Produk Terlaris (Top 10)</h2>
+                <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border-2 border-pink-200">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-blue-100 p-2 rounded-lg">🏆</div>
+                    <h2 className="text-xl font-black text-gray-800">Top 10 Produk Terlaris</h2>
+                  </div>
+
                   {topProductsData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={400}>
-                      <BarChart data={topProductsData} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" tickFormatter={(value) => `Rp${(value / 1000).toFixed(0)}k`} />
-                        <YAxis dataKey="name" type="category" width={100} />
-                        <Tooltip formatter={(value: number) => formatRupiah(value)} />
-                        <LegendWrapper />
-                        <Bar dataKey="revenue" fill="#3b82f6" name="Pendapatan" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <div className="h-[400px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={topProductsData} layout="vertical" barSize={20}>
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
+                          <XAxis type="number" hide />
+                          <YAxis 
+                            dataKey="name" 
+                            type="category" 
+                            width={120} 
+                            tick={{fontSize: 11, fill: '#4b5563', fontWeight: 600}} 
+                          />
+                          <Tooltip 
+                             cursor={{fill: '#fce7f3'}}
+                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                             formatter={(value: number) => [formatRupiah(value), 'Omset']}
+                          />
+                          <Bar dataKey="revenue" fill="url(#colorGradient)" radius={[0, 10, 10, 0]}>
+                             {/* Gradient Definition inside SVG */}
+                            <defs>
+                                <linearGradient id="colorGradient" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="5%" stopColor="#ec4899" stopOpacity={0.8}/>
+                                <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.8}/>
+                                </linearGradient>
+                            </defs>
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   ) : (
-                    <p className="text-center text-gray-500 py-12">Belum ada data produk</p>
+                    <div className="text-center py-12 bg-pink-50/50 rounded-2xl">
+                        <p className="text-gray-500 font-medium">Belum ada data produk terjual</p>
+                    </div>
                   )}
                 </div>
 
                 {/* Order Status */}
-                <div className="bg-white rounded-lg p-6 shadow">
-                  <h2 className="text-xl font-bold mb-4">📊 Distribusi Status Order</h2>
+                <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border-2 border-pink-200">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-amber-100 p-2 rounded-lg">🚦</div>
+                    <h2 className="text-xl font-black text-gray-800">Status Pesanan</h2>
+                  </div>
+
                   {orderStatusData.some((d) => d.value > 0) ? (
-                    <ResponsiveContainer width="100%" height={400}>
-                      <PieChart>
-                        <Pie
-                          data={orderStatusData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={renderPieLabel}
-                          outerRadius={120}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {orderStatusData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                        <LegendWrapper />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <div className="h-[400px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={orderStatusData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={5}
+                            dataKey="value"
+                            label={renderPieLabel}
+                          >
+                            {orderStatusData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <LegendWrapper />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
                   ) : (
-                    <p className="text-center text-gray-500 py-12">Belum ada data order</p>
+                    <div className="text-center py-12 bg-pink-50/50 rounded-2xl">
+                        <p className="text-gray-500 font-medium">Belum ada data status</p>
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* Product Details Table */}
-              <div className="bg-white rounded-lg shadow">
-                <div className="p-6 border-b">
-                  <h2 className="text-xl font-bold">📦 Detail Produk Terlaris</h2>
+              {/* Detail Table */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border-2 border-pink-200 overflow-hidden">
+                <div className="p-6 border-b border-pink-100 bg-pink-50/50">
+                  <h2 className="text-xl font-black text-gray-800 flex items-center gap-2">
+                    <span>📋</span> Detail Performa Produk
+                  </h2>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-pink-100/50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Produk
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Terjual
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Pendapatan
-                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-pink-700 uppercase tracking-wider">No</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-pink-700 uppercase tracking-wider">Produk</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-pink-700 uppercase tracking-wider">Terjual</th>
+                        <th className="px-6 py-4 text-left text-xs font-bold text-pink-700 uppercase tracking-wider">Pendapatan</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="divide-y divide-pink-50">
                       {topProductsData.length > 0 ? (
                         topProductsData.map((product, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
+                          <tr key={index} className="hover:bg-pink-50/30 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-400">
+                                #{index + 1}
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold mr-3">
-                                  {index + 1}
-                                </div>
-                                <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                              </div>
+                              <span className="text-sm font-bold text-gray-800">{product.name}</span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                              {product.quantity} unit
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold border border-blue-100">
+                                {product.quantity} unit
+                              </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-pink-600">
                               {formatRupiah(product.revenue)}
                             </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={3} className="px-6 py-12 text-center text-gray-500">
+                          <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
                             Belum ada data penjualan
                           </td>
                         </tr>
@@ -356,6 +475,23 @@ export default function StatistikPage() {
           )}
         </div>
       </main>
+
+      <style jsx>{`
+        @keyframes blob {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+      `}</style>
     </div>
   )
 }

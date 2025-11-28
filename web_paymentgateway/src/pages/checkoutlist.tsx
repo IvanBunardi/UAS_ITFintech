@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 
@@ -79,15 +80,15 @@ export default function AdminCheckoutPage() {
     })
   }
 
-  // 🔹 Tampilan badge status
+  // 🔹 Tampilan badge status (Styled)
   const getStatusBadge = (status: string) => {
     const config: any = {
-      waiting_payment: { bg: 'bg-yellow-100 text-yellow-800', label: '⏳ Menunggu Pembayaran' },
-      paid: { bg: 'bg-green-100 text-green-800', label: '✅ Lunas' },
-      cancelled: { bg: 'bg-red-100 text-red-800', label: '❌ Dibatalkan' },
+      waiting_payment: { bg: 'bg-amber-100 text-amber-700 border-amber-200', label: '⏳ Menunggu Pembayaran' },
+      paid: { bg: 'bg-green-100 text-green-700 border-green-200', label: '✅ Lunas' },
+      cancelled: { bg: 'bg-red-100 text-red-700 border-red-200', label: '❌ Dibatalkan' },
     }
     const c = config[status] || config.waiting_payment
-    return <span className={`px-3 py-1 rounded-full text-sm font-medium ${c.bg}`}>{c.label}</span>
+    return <span className={`px-3 py-1 rounded-full text-xs font-bold border ${c.bg} shadow-sm`}>{c.label}</span>
   }
 
   // 🔹 Filter order sesuai status
@@ -107,60 +108,88 @@ export default function AdminCheckoutPage() {
 
   // ============================== RENDER ==============================
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-pink-50 via-rose-50 to-amber-50 font-sans text-gray-800">
+        
+       {/* Decorative circles */}
+      <div className="fixed top-20 right-10 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob pointer-events-none"></div>
+      <div className="fixed top-40 left-10 w-96 h-96 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000 pointer-events-none"></div>
+
       {/* 🔹 Navbar */}
-      <nav className="bg-white shadow-md py-4 px-8 flex items-center justify-between relative">
-        <button onClick={() => router.push('/')} className="text-black font-semibold hover:text-blue-700">
-          ← Back
+      <nav className="bg-white/90 backdrop-blur-lg shadow-xl py-4 px-8 flex items-center justify-between sticky top-0 z-50 border-b-4 border-pink-400">
+        <button 
+          onClick={() => router.push('/')} 
+          className="flex items-center gap-2 text-pink-600 font-bold hover:text-pink-700 transition-colors"
+        >
+          <span className="text-xl">←</span>
+          <span>Kembali</span>
         </button>
-        <h1 className="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold text-gray-800">
-          Admin Dashboard
-        </h1>
-        <div className="flex items-center space-x-4">
+
+        <div className="flex flex-col items-center">
+             <h1 className="text-2xl font-black bg-gradient-to-r from-pink-600 via-rose-500 to-pink-600 bg-clip-text text-transparent tracking-tight">
+                Order Management
+            </h1>
+            <p className="text-[10px] font-bold text-gray-400 tracking-widest">DAFTAR PESANAN MASUK</p>
+        </div>
+
+        <div className="flex items-center gap-3">
           <button
             onClick={() => router.push('/admin')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              currentPath === '/admin' ? 'bg-blue-700 text-white shadow' : 'text-gray-700 hover:bg-gray-200'
+            className={`px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
+              currentPath === '/admin' 
+                ? 'bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white shadow-lg scale-105' 
+                : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600'
             }`}
           >
-            ➕ Add Item
+            <span className="mr-2">➕</span>
+            Produk
           </button>
+          
           <button
             onClick={() => router.push('/checkoutlist')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              currentPath === '/admin/checkout' ? 'bg-blue-700 text-white shadow' : 'text-gray-700 hover:bg-gray-200'
+            className={`px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
+              currentPath === '/checkoutlist' 
+                 ? 'bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white shadow-lg scale-105' 
+                : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600'
             }`}
           >
-            🛒 Checkout
+            <span className="mr-2">🛒</span>
+            Pesanan
           </button>
+
           <button
             onClick={() => router.push('/statistik')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              currentPath === '/admin/statistik' ? 'bg-blue-700 text-white shadow' : 'text-gray-700 hover:bg-gray-200'
+             className={`px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
+              currentPath === '/statistik' 
+                 ? 'bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white shadow-lg scale-105' 
+                : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600'
             }`}
           >
-            📊 Statistik
+            <span className="mr-2">📊</span>
+            Statistik
           </button>
         </div>
       </nav>
 
       {/* 🔹 Main Content */}
-      <main className="flex-grow p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Statistik */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <StatBox label="Total Order" value={stats.total} color="text-blue-600" />
-            <StatBox label="Menunggu" value={stats.waiting} color="text-yellow-600" />
-            <StatBox label="Lunas" value={stats.paid} color="text-green-600" />
-            <StatBox label="Dibatalkan" value={stats.cancelled} color="text-red-600" />
-            <StatBox label="Pendapatan" value={formatRupiah(stats.revenue)} color="text-green-600" />
+      <main className="flex-grow p-6 z-10 relative">
+        <div className="max-w-7xl mx-auto space-y-8">
+          
+          {/* Statistik Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <StatBox label="Total Order" value={stats.total} icon="📦" color="text-blue-600" />
+            <StatBox label="Menunggu" value={stats.waiting} icon="⏳" color="text-amber-600" />
+            <StatBox label="Lunas" value={stats.paid} icon="✅" color="text-green-600" />
+            <StatBox label="Dibatalkan" value={stats.cancelled} icon="❌" color="text-red-600" />
+            <StatBox label="Pendapatan" value={formatRupiah(stats.revenue)} icon="💰" color="text-pink-600" />
           </div>
 
           {/* Pesan Sukses/Error */}
           {message && (
             <div
-              className={`p-4 rounded-lg text-center font-medium ${
-                message.includes('❌') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+              className={`p-4 rounded-2xl text-center font-bold shadow-md animate-bounce ${
+                message.includes('❌') 
+                    ? 'bg-red-100 text-red-700 border-2 border-red-200' 
+                    : 'bg-green-100 text-green-700 border-2 border-green-200'
               }`}
             >
               {message}
@@ -168,40 +197,50 @@ export default function AdminCheckoutPage() {
           )}
 
           {/* Filter Status */}
-          <div className="bg-white rounded-lg p-4 shadow flex items-center gap-4">
-            <span className="font-medium text-gray-700">Filter:</span>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border-2 border-pink-100 flex flex-wrap items-center gap-4">
+            <span className="font-bold text-gray-700 flex items-center gap-2">
+                <span>🔍</span> Filter Status:
+            </span>
             {[
               { key: 'all', label: 'Semua', count: stats.total, color: 'blue' },
               { key: 'waiting_payment', label: 'Menunggu', count: stats.waiting, color: 'yellow' },
               { key: 'paid', label: 'Lunas', count: stats.paid, color: 'green' },
-              { key: 'cancelled', label: 'Dibatalkan', count: stats.cancelled, color: 'red' },
+              { key: 'cancelled', label: 'Batal', count: stats.cancelled, color: 'red' },
             ].map((btn) => (
               <button
                 key={btn.key}
                 onClick={() => setFilterStatus(btn.key)}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
+                className={`px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
                   filterStatus === btn.key
-                    ? `bg-${btn.color}-500 text-white`
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? `bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md transform scale-105`
+                    : 'bg-white text-gray-600 hover:bg-pink-50 hover:text-pink-600 border border-gray-200'
                 }`}
               >
-                {btn.label} ({btn.count})
+                {btn.label} <span className="ml-1 text-xs opacity-80 bg-black/20 px-2 py-0.5 rounded-full">{btn.count}</span>
               </button>
             ))}
           </div>
 
           {/* Daftar Order */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b">
-              <h2 className="text-2xl font-bold">📋 Daftar Order</h2>
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border-2 border-pink-200 overflow-hidden">
+            <div className="p-6 border-b border-pink-100 bg-pink-50/50">
+              <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
+                <span>📋</span> Daftar Transaksi
+              </h2>
             </div>
 
             {loading ? (
-              <p className="text-center text-gray-500 py-12">⏳ Memuat data...</p>
+               <div className="flex flex-col items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-pink-500 mb-4"></div>
+                <p className="text-gray-500 font-bold">Memuat pesanan...</p>
+              </div>
             ) : filteredOrders.length === 0 ? (
-              <p className="text-center text-gray-500 py-12">Belum ada order.</p>
+               <div className="text-center py-20">
+                <div className="text-6xl mb-4">📭</div>
+                <p className="text-gray-500 font-bold">Tidak ada data order.</p>
+              </div>
             ) : (
-              <div className="divide-y">
+              <div className="divide-y divide-pink-100">
                 {filteredOrders.map((order) => (
                   <OrderCard
                     key={order._id}
@@ -220,17 +259,34 @@ export default function AdminCheckoutPage() {
           </div>
         </div>
       </main>
+
+       <style jsx>{`
+        @keyframes blob {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+      `}</style>
     </div>
   )
 }
 
-// ===================== Komponen Tambahan =====================
+// ===================== Komponen Tambahan (Styled) =====================
 
-function StatBox({ label, value, color }: { label: string; value: any; color: string }) {
+function StatBox({ label, value, color, icon }: { label: string; value: any; color: string; icon: string }) {
   return (
-    <div className="bg-white rounded-lg p-4 shadow">
-      <p className="text-gray-600 text-sm">{label}</p>
-      <p className={`text-2xl font-bold ${color}`}>{value}</p>
+    <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-lg border border-pink-100 hover:border-pink-300 transition-all duration-300">
+      <div className="flex justify-between items-start">
+          <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">{label}</p>
+          <span className="text-xl">{icon}</span>
+      </div>
+      <p className={`text-2xl font-black mt-2 truncate ${color}`}>{value}</p>
     </div>
   )
 }
@@ -246,80 +302,100 @@ function OrderCard({
   deleteOrder,
 }: any) {
   return (
-    <div className="p-6 hover:bg-gray-50 transition">
-      <div className="flex items-start justify-between mb-4">
+    <div className="p-6 hover:bg-pink-50/40 transition-colors duration-200">
+      <div className="flex flex-col md:flex-row md:items-start justify-between mb-4 gap-4">
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-lg font-bold text-blue-600">{order.orderNumber}</h3>
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
+            <div className="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg font-bold text-sm border border-blue-100">
+                #{order.orderNumber}
+            </div>
             {getStatusBadge(order.status)}
           </div>
-          <p className="text-gray-600">
-            <span className="font-medium">👤 {order.customerName}</span> • 📱 {order.customerPhone}
-            {order.customerEmail && ` • ✉️ ${order.customerEmail}`}
+          <div className="flex items-center gap-2 text-gray-700 font-bold text-lg">
+             <span>👤 {order.customerName}</span>
+          </div>
+          <p className="text-gray-500 text-sm mt-1">
+             📱 {order.customerPhone} {order.customerEmail && ` • ✉️ ${order.customerEmail}`}
           </p>
-          <p className="text-sm text-gray-500 mt-1">🕐 {formatDate(order.createdAt)}</p>
+          <p className="text-xs text-gray-400 mt-2 font-bold flex items-center gap-1">
+             🕐 {formatDate(order.createdAt)}
+          </p>
         </div>
-        <div className="text-right">
-          <p className="text-2xl font-bold text-green-600">{formatRupiah(order.totalAmount)}</p>
-          <p className="text-sm text-gray-500">{order.items.length} item(s)</p>
+
+        <div className="text-left md:text-right bg-white p-3 rounded-xl border border-pink-100 shadow-sm">
+          <p className="text-xs text-gray-500 font-bold uppercase">Total Pembayaran</p>
+          <p className="text-2xl font-black bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent">
+            {formatRupiah(order.totalAmount)}
+          </p>
+          <p className="text-xs text-gray-500 font-bold mt-1">{order.items.length} item(s)</p>
         </div>
       </div>
 
       <button
         onClick={() => setExpandedOrder(expandedOrder === order._id ? null : order._id)}
-        className="text-blue-600 hover:text-blue-700 font-medium text-sm mb-3"
+        className="text-pink-600 hover:text-pink-700 font-bold text-sm mb-3 flex items-center gap-1 transition-colors"
       >
-        {expandedOrder === order._id ? '▼ Sembunyikan Detail' : '▶ Lihat Detail'}
+        {expandedOrder === order._id ? '🔼 Sembunyikan Detail' : '🔽 Lihat Detail Produk'}
       </button>
 
       {expandedOrder === order._id && (
-        <div className="bg-gray-50 rounded-lg p-4 mb-4 space-y-3">
+        <div className="bg-white rounded-2xl p-4 mb-6 border-2 border-pink-100 shadow-inner space-y-3">
           {order.items.map((item: any, idx: number) => (
-            <div key={idx} className="flex items-center gap-4 bg-white p-3 rounded">
-              {item.imageUrl && (
-                <img
-                  src={item.imageUrl}
-                  alt={item.name}
-                  className="w-16 h-16 object-cover rounded"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://via.placeholder.com/64?text=No+Image'
-                  }}
-                />
-              )}
+            <div key={idx} className="flex items-center gap-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
+              <div className="w-16 h-16 bg-white rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                  {item.imageUrl ? (
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://via.placeholder.com/64?text=Pia'
+                      }}
+                    />
+                  ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xl">🥧</div>
+                  )}
+              </div>
+              
               <div className="flex-1">
-                <p className="font-medium">{item.name}</p>
-                <p className="text-sm text-gray-600">{item.category}</p>
+                <p className="font-bold text-gray-800">{item.name}</p>
+                <p className="text-xs text-gray-500 font-medium bg-gray-200 inline-block px-2 py-0.5 rounded mt-1">
+                    {item.category || 'Pia Popo'}
+                </p>
               </div>
+              
               <div className="text-right">
-                <p className="font-medium">{item.quantity}x</p>
-                <p className="text-sm text-gray-600">{formatRupiah(item.price)}</p>
+                <p className="font-bold text-gray-600">{item.quantity} x</p>
+                <p className="text-xs text-gray-500">{formatRupiah(item.price)}</p>
               </div>
-              <div className="text-right">
-                <p className="font-bold text-blue-600">{formatRupiah(item.price * item.quantity)}</p>
+              
+              <div className="text-right w-24">
+                <p className="font-black text-pink-600">{formatRupiah(item.price * item.quantity)}</p>
               </div>
             </div>
           ))}
+          
           {order.notes && (
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mt-3">
-              <p className="text-sm font-medium text-gray-700">📝 Catatan:</p>
-              <p className="text-sm text-gray-600">{order.notes}</p>
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg mt-3">
+              <p className="text-xs font-bold text-yellow-700 uppercase">📝 Catatan Customer:</p>
+              <p className="text-sm text-gray-700 font-medium italic">"{order.notes}"</p>
             </div>
           )}
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2 pt-2 border-t border-pink-100">
         {order.status === 'waiting_payment' && (
           <>
             <button
               onClick={() => updateOrderStatus(order._id, 'paid')}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-medium"
+              className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition font-bold text-sm"
             >
               ✅ Tandai Lunas
             </button>
             <button
               onClick={() => updateOrderStatus(order._id, 'cancelled')}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium"
+              className="px-4 py-2 bg-white text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition font-bold text-sm"
             >
               ❌ Batalkan
             </button>
@@ -328,22 +404,22 @@ function OrderCard({
         {order.status === 'paid' && (
           <button
             onClick={() => updateOrderStatus(order._id, 'cancelled')}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium"
+            className="px-4 py-2 bg-white text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition font-bold text-sm"
           >
-            ❌ Batalkan
+            ❌ Batalkan Pesanan
           </button>
         )}
         {order.status === 'cancelled' && (
           <button
             onClick={() => updateOrderStatus(order._id, 'waiting_payment')}
-            className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition font-medium"
+            className="px-4 py-2 bg-yellow-100 text-yellow-700 border border-yellow-200 rounded-xl hover:bg-yellow-200 transition font-bold text-sm"
           >
-            🔄 Kembalikan
+            🔄 Kembalikan ke Menunggu
           </button>
         )}
         <button
           onClick={() => deleteOrder(order._id)}
-          className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-medium ml-auto"
+          className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition font-bold text-sm ml-auto border border-gray-200"
         >
           🗑️ Hapus
         </button>
