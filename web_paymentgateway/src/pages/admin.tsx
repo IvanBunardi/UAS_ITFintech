@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 
+// --- TIPE DATA ---
 interface Product {
   _id: string
   name: string
@@ -17,41 +18,75 @@ interface Product {
 type MessageType = 'success' | 'error' | 'loading' | ''
 
 export default function AdminPage() {
-  // Form States
+  // --- AUTHENTICATION STATE ---
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true) // Mencegah flash content
+  const [loginUser, setLoginUser] = useState('')
+  const [loginPass, setLoginPass] = useState('')
+  const [loginError, setLoginError] = useState('')
+
+  // --- DASHBOARD STATES ---
   const [name, setName] = useState('')
   const [category, setCategory] = useState('')
   const [price, setPrice] = useState('')
   const [description, setDescription] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   
-  // UI States
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState<MessageType>('')
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   
-  // Edit States
   const [editingId, setEditingId] = useState<string | null>(null)
   const [currentImageUrl, setCurrentImageUrl] = useState('')
   
   const router = useRouter()
   const currentPath = router.pathname
-
   const categories = ['Drinks', 'Snacks', 'Food', 'Clothes', 'Bundle']
 
+  // --- CEK LOGIN SAAT PERTAMA LOAD ---
   useEffect(() => {
-    fetchProducts()
+    const checkAuth = () => {
+      const isAuth = localStorage.getItem('pia_admin_auth')
+      if (isAuth === 'true') {
+        setIsAuthenticated(true)
+        fetchProducts() // Ambil produk hanya jika sudah login
+      }
+      setAuthLoading(false)
+    }
+    checkAuth()
   }, [])
 
-  // Fetch products from API
+  // --- FUNGSI LOGIN ---
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // HARDCODED CREDENTIALS
+    if (loginUser === 'titiana757' && loginPass === 'piapopo757') {
+      localStorage.setItem('pia_admin_auth', 'true')
+      setIsAuthenticated(true)
+      setLoginError('')
+      fetchProducts()
+    } else {
+      setLoginError('Username atau Password salah!')
+    }
+  }
+
+  // --- FUNGSI LOGOUT ---
+  const handleLogout = () => {
+    localStorage.removeItem('pia_admin_auth')
+    setIsAuthenticated(false)
+    setLoginUser('')
+    setLoginPass('')
+  }
+
+  // --- FETCH PRODUCTS ---
   const fetchProducts = async () => {
     try {
       setLoading(true)
       const res = await fetch('/api/product')
-      
       if (!res.ok) throw new Error('Gagal mengambil data produk')
-      
       const data = await res.json()
       setProducts(Array.isArray(data) ? data : [])
     } catch (err: unknown) {
@@ -62,12 +97,10 @@ export default function AdminPage() {
     }
   }
 
-  // Handle form submission
+  // --- HANDLE SUBMIT ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     if (submitting) return
-    
     setSubmitting(true)
     showMessage('Menyimpan...', 'loading')
 
@@ -87,18 +120,11 @@ export default function AdminPage() {
       const url = editingId ? `/api/product?id=${editingId}` : '/api/product'
       const method = editingId ? 'PUT' : 'POST'
 
-      const res = await fetch(url, {
-        method,
-        body: formData,
-      })
-
+      const res = await fetch(url, { method, body: formData })
       const result = await res.json()
 
       if (res.ok) {
-        showMessage(
-          editingId ? 'Produk berhasil diupdate!' : 'Produk berhasil ditambahkan!',
-          'success'
-        )
+        showMessage(editingId ? 'Produk berhasil diupdate!' : 'Produk berhasil ditambahkan!', 'success')
         resetForm()
         await fetchProducts()
       } else {
@@ -112,34 +138,25 @@ export default function AdminPage() {
     }
   }
 
-  // Handle edit product
+  // --- OTHER HANDLERS ---
   const handleEdit = (product: Product) => {
     setEditingId(product._id)
     setName(product.name)
     setCategory(product.category)
     setPrice(product.price.toString())
     setDescription(product.description)
-    
-    // SUDAH DIPERBAIKI (sebelumnya setImageUrl)
     setCurrentImageUrl(product.imageUrl)
-    
     setImageFile(null)
     setMessage('')
     setMessageType('')
-
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // Handle delete product
   const handleDelete = async (id: string) => {
     if (!confirm('Yakin ingin menghapus produk ini?')) return
-
     try {
       const res = await fetch(`/api/product?id=${id}`, { method: 'DELETE' })
       const result = await res.json()
-
       if (res.ok) {
         showMessage('Produk berhasil dihapus!', 'success')
         await fetchProducts()
@@ -152,7 +169,6 @@ export default function AdminPage() {
     }
   }
 
-  // Reset form
   const resetForm = () => {
     setName('')
     setCategory('')
@@ -160,21 +176,16 @@ export default function AdminPage() {
     setDescription('')
     setImageFile(null)
     setEditingId(null)
-    
-    // SUDAH DIPERBAIKI (sebelumnya setImageUrl)
     setCurrentImageUrl('')
-
     if (typeof document !== 'undefined') {
       const fileInput = document.getElementById('imageFileInput') as HTMLInputElement | null
       if (fileInput) fileInput.value = ''
     }
   }
 
-  // Show message with auto-hide
   const showMessage = (msg: string, type: MessageType) => {
     setMessage(msg)
     setMessageType(type)
-    
     if (type === 'success' || type === 'error') {
       setTimeout(() => {
         setMessage('')
@@ -183,24 +194,103 @@ export default function AdminPage() {
     }
   }
 
-  // Format price to Rupiah
   const formatRupiah = (value: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value)
 
-  // Get message styling
   const getMessageStyle = () => {
     switch (messageType) {
-      case 'success':
-        return 'bg-green-100 text-green-700 border-green-300'
-      case 'error':
-        return 'bg-red-100 text-red-700 border-red-300'
-      case 'loading':
-        return 'bg-amber-100 text-amber-700 border-amber-300'
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-300'
+      case 'success': return 'bg-green-100 text-green-700 border-green-300'
+      case 'error': return 'bg-red-100 text-red-700 border-red-300'
+      case 'loading': return 'bg-amber-100 text-amber-700 border-amber-300'
+      default: return 'bg-gray-100 text-gray-700 border-gray-300'
     }
   }
 
+  // --- RENDER LOGIN PAGE (JIKA BELUM AUTH) ---
+  if (authLoading) return null // Blank screen saat cek session
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-pink-50 via-rose-50 to-amber-50 font-sans relative overflow-hidden">
+        {/* Background Blobs */}
+        <div className="fixed top-20 right-10 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob pointer-events-none"></div>
+        <div className="fixed top-40 left-10 w-96 h-96 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000 pointer-events-none"></div>
+        
+        <div className="w-full max-w-md bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-8 border-2 border-pink-200 z-10 animate-fade-in mx-4">
+          <div className="text-center mb-8">
+            <div className="text-6xl mb-4 animate-bounce">🔐</div>
+            <h1 className="text-3xl font-black bg-gradient-to-r from-pink-600 via-rose-500 to-pink-600 bg-clip-text text-transparent">
+              Admin Login
+            </h1>
+            <p className="text-gray-500 font-medium">Masuk untuk mengelola Pia Popo</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Username ID</label>
+              <input 
+                type="text" 
+                value={loginUser}
+                onChange={(e) => setLoginUser(e.target.value)}
+                className="w-full px-5 py-3 border-2 border-pink-200 rounded-2xl focus:ring-4 focus:ring-pink-100 focus:border-pink-500 outline-none transition-all"
+                placeholder="Masukkan ID Admin"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">Password</label>
+              <input 
+                type="password" 
+                value={loginPass}
+                onChange={(e) => setLoginPass(e.target.value)}
+                className="w-full px-5 py-3 border-2 border-pink-200 rounded-2xl focus:ring-4 focus:ring-pink-100 focus:border-pink-500 outline-none transition-all"
+                placeholder="Masukkan Password"
+                required
+              />
+            </div>
+
+            {loginError && (
+              <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-center font-bold text-sm">
+                {loginError}
+              </div>
+            )}
+
+            <button 
+              type="submit"
+              className="w-full py-4 bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white rounded-2xl font-black text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all duration-300"
+            >
+              Masuk Dashboard
+            </button>
+            
+            <div className="text-center">
+                <button 
+                    type="button" 
+                    onClick={() => router.push('/')}
+                    className="text-pink-600 hover:text-pink-800 text-sm font-bold hover:underline"
+                >
+                    ← Kembali ke Homepage
+                </button>
+            </div>
+          </form>
+        </div>
+
+        <style jsx>{`
+          @keyframes blob {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+          }
+          .animate-blob { animation: blob 7s infinite; }
+          .animation-delay-2000 { animation-delay: 2s; }
+          .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        `}</style>
+      </div>
+    )
+  }
+
+  // --- RENDER DASHBOARD (JIKA SUDAH AUTH) ---
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-gradient-to-br from-pink-50 via-rose-50 to-amber-50 font-sans">
       
@@ -216,7 +306,7 @@ export default function AdminPage() {
           className="flex items-center gap-2 text-pink-600 font-bold hover:text-pink-700 transition-colors"
         >
           <span className="text-xl">←</span>
-          <span>Kembali</span>
+          <span>Home</span>
         </button>
 
         <div className="flex flex-col items-center">
@@ -229,7 +319,7 @@ export default function AdminPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push('/admin')}
-            className={`px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
+            className={`hidden md:block px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
               currentPath === '/admin' 
                 ? 'bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white shadow-lg scale-105' 
                 : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600'
@@ -241,7 +331,7 @@ export default function AdminPage() {
           
           <button
             onClick={() => router.push('/checkoutlist')}
-            className={`px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
+            className={`hidden md:block px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
               currentPath === '/checkoutlist' 
                  ? 'bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white shadow-lg scale-105' 
                 : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600'
@@ -253,7 +343,7 @@ export default function AdminPage() {
 
           <button
             onClick={() => router.push('/statistik')}
-             className={`px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
+             className={`hidden md:block px-4 py-2 rounded-xl font-bold transition-all duration-200 ${
               currentPath === '/statistik' 
                  ? 'bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 text-white shadow-lg scale-105' 
                 : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600'
@@ -262,9 +352,18 @@ export default function AdminPage() {
             <span className="mr-2">📊</span>
             Statistik
           </button>
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-100 text-red-600 rounded-xl font-bold hover:bg-red-200 transition-all shadow-sm border border-red-200 ml-2"
+          >
+            Logout
+          </button>
         </div>
       </nav>
 
+      {/* Main Content Dashboard */}
       <main className="flex-grow p-6 z-10 relative">
         <div className="max-w-7xl mx-auto space-y-8">
           
